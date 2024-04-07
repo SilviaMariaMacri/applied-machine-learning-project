@@ -55,7 +55,7 @@ class AE(object):
         self.dims = dims
         self.autoencoder = autoencoder(self.dims)           
 
-    def train(self, x, batch_size=20, epochs=500, weights_file='ae_weights.h5'):
+    def train(self, x, batch_size=20, epochs=500, weights_file=None):
         
         '''
         Trains the autoencoder with the input data
@@ -73,9 +73,9 @@ class AE(object):
         Returns latent dimension coordinates given input data, after training or loading saved weights
         '''
 
-        n_stacks = len(self.dims) - 1
+        n_layers = len(self.dims) - 1
         self.encoder = Model(inputs=self.autoencoder.input, 
-                             outputs=self.autoencoder.get_layer('encoder_%d' % (n_stacks - 1)).output, 
+                             outputs=self.autoencoder.get_layer('encoder_%d' % (n_layers - 1)).output, 
                              name='encoder')
         return self.encoder.predict(x)
     
@@ -87,10 +87,10 @@ class AE(object):
 
         return self.autoencoder.predict(x)
     
-    def load_weights(self,weights_file='ae_weights.h5'):
+    def load_weights(self,weights_file):
 
         '''
         Loads weights from file
         '''
-        
+
         return self.autoencoder.load_weights(weights_file)
