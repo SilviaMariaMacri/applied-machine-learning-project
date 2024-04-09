@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Dense,Input
-
-
+from tensorflow.keras.callbacks import CSVLogger,EarlyStopping,ReduceLROnPlateau
+from tensorflow.keras.metrics import RootMeanSquaredError
+import os 
 
 def autoencoder(dims, act='relu'): 
 
@@ -55,16 +56,27 @@ class AE(object):
         self.dims = dims
         self.autoencoder = autoencoder(self.dims)           
 
-    def train(self, x, batch_size=20, epochs=500, weights_file=None):
+    def train(self, 
+              x, 
+              optimizer='sgd', loss='mse', metrics=None, # compile parameters
+              batch_size=32, epochs=800, callbacks=[EarlyStopping(monitor="loss", patience=15),ReduceLROnPlateau(monitor="loss", patience=10)], # fit parameters
+              save_dir=None):
         
         '''
         Trains the autoencoder with the input data
         '''
         
-        self.autoencoder.compile(optimizer='sgd', loss='mse')
-        history = self.autoencoder.fit(x, x, batch_size=batch_size, epochs=epochs)
-        if weights_file not None:
-            self.autoencoder.save_weights(weights_file)
+        self.autoencoder.compile(optimizer=optimizer, loss=loss, metrics=metrics)
+
+        if (save_dir is not None) and (callbacks is not None):
+            if not os.path.exists(save_dir):
+                os.makedirs(save_dir)
+            callbacks.append(CSVLogger(save_dir+'/history.csv', separator="\t")) # Save epoch results to a CSV file
+        history = self.autoencoder.fit(x, x, batch_size=batch_size, epochs=epochs, callbacks=callbacks, verbose=2)
+        
+        if save_dir is not None:
+            self.autoencoder.save_weights(save_dir+'/weights.h5')
+        
         return history
 
     def extract_features(self, x):
@@ -87,10 +99,12 @@ class AE(object):
 
         return self.autoencoder.predict(x)
     
-    def load_weights(self,weights_file):
+    def load_weights(self,save_dir):
 
         '''
         Loads weights from file
         '''
 
-        return self.autoencoder.load_weights(weights_file)
+        return self.autoencoder.load_weights(save_dir+'/weights.h5')
+
+
