@@ -106,5 +106,3 @@ class AE(object):
         '''
 
         return self.autoencoder.load_weights(save_dir+'/weights.h5')
-
-
